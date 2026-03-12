@@ -1,0 +1,31 @@
+security:
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+
+            webauthn:
+                authentication:
+                    routes:
+                        options_path: /login/passkey/options
+                        result_path: /login/passkey/result
+                registration:
+                    enabled: true
+                    routes:
+                        options_path: /register/passkey/options
+                        result_path: /register/passkey/result
+                success_handler: App\Security\AuthenticationSuccessHandler
+                failure_handler: App\Security\AuthenticationFailureHandler
+
+            logout:
+                path: app_logout
+    access_control:
+        - { path: ^/dashboard, roles: ROLE_USER }

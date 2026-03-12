@@ -1,0 +1,12 @@
+webauthn:
+    allowed_origins: ['%env(WEBAUTHN_ALLOWED_ORIGINS)%']
+    credential_repository: 'App\Repository\PublicKeyCredentialSourceRepository'
+    user_repository: 'App\Repository\UserRepository'
+    creation_profiles:
+        default:
+            rp:
+                name: '%env(RELYING_PARTY_NAME)%'
+                id: '%env(RELYING_PARTY_ID)%'
+    request_profiles:
+        default:
+            rp_id: '%env(RELYING_PARTY_ID)%'

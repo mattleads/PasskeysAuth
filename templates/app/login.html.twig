@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Log in or Register with Passkey{% endblock %}
+
+{% block body %}
+    <div style="max-width: 400px; margin: 50px auto; font-family: sans-serif;">
+        <h1>Passkeys Demo</h1>
+        
+        {% if app.session.flashbag.peekAll|length > 0 %}
+            <div class="alert alert-danger">
+                Authentication failed or session expired.
+            </div>
+        {% endif %}
+
+        <h2>Register</h2>
+        <form data-controller="passkey" 
+              data-passkey-options-url-value="/register/passkey/options"
+              data-passkey-result-url-value="/register/passkey/result"
+              data-passkey-is-login-value="false"
+              data-action="submit->passkey#submit">
+            <div style="margin-bottom: 10px;">
+                <input type="text" name="username" placeholder="Enter an email to register" required style="width: 100%; padding: 8px;" />
+            </div>
+            <button type="submit" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer;">
+                Register with Passkey
+            </button>
+        </form>
+
+        <hr style="margin: 30px 0;">
+
+        <h2>Login</h2>
+        <form data-controller="passkey" 
+              data-passkey-options-url-value="/login/passkey/options"
+              data-passkey-result-url-value="/login/passkey/result"
+              data-passkey-is-login-value="true"
+              data-action="submit->passkey#submit">
+            <!-- No username needed for conditional mediation/discoverable credentials usually, but we can pass it if we want -->
+            <button type="submit" style="width: 100%; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer;">
+                Log in with Passkey
+            </button>
+        </form>
+    </div>
+{% endblock %}
