@@ -1,4 +1,6 @@
 security:
+    password_hashers:
+        App\Entity\User: 'auto'
     providers:
         app_user_provider:
             entity:
@@ -11,6 +13,8 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+
+            custom_authenticator: App\Security\HybridAuthenticator
 
             webauthn:
                 authentication:

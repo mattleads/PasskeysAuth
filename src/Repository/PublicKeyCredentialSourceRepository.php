@@ -20,7 +20,7 @@ class PublicKeyCredentialSourceRepository extends ServiceEntityRepository implem
 
     public function findOneByCredentialId(string $publicKeyCredentialId): ?WebauthnSource
     {
-        return $this->findOneBy(['publicKeyCredentialId' => $publicKeyCredentialId]);
+        return $this->findOneBy(['publicKeyCredentialId' => base64_encode($publicKeyCredentialId)]);
     }
 
     public function findAllForUserEntity(PublicKeyCredentialUserEntity $publicKeyCredentialUserEntity): array
@@ -30,8 +30,14 @@ class PublicKeyCredentialSourceRepository extends ServiceEntityRepository implem
 
     public function saveCredentialSource(WebauthnSource $publicKeyCredentialSource): void
     {
-        $entity = $this->findOneBy(['publicKeyCredentialId' => base64_encode($publicKeyCredentialSource->publicKeyCredentialId)])
-            ?? $this->objectMapper->map($publicKeyCredentialSource, PublicKeyCredentialSource::class);
+        $id = base64_encode($publicKeyCredentialSource->publicKeyCredentialId);
+        $entity = $this->findOneBy(['publicKeyCredentialId' => $id]);
+        
+        if (!$entity) {
+            $entity = $this->objectMapper->map($publicKeyCredentialSource, PublicKeyCredentialSource::class);
+            // Ensure the ID is base64 encoded for DB storage
+            $entity->publicKeyCredentialId = $id;
+        }
 
         $this->getEntityManager()->persist($entity);
         $this->getEntityManager()->flush();

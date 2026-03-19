@@ -20,7 +20,7 @@ readonly class AuthenticationFailureHandler implements AuthenticationFailureHand
         if ($request->getContentTypeFormat() === 'json' || $request->isXmlHttpRequest()) {
             return new JsonResponse([
                 'status' => 'error',
-                'errorMessage' => $exception->getMessageKey(),
+                'errorMessage' => $exception->getMessage(),
             ], Response::HTTP_UNAUTHORIZED);
         }
 

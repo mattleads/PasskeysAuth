@@ -22,14 +22,14 @@ use Webauthn\PublicKeyCredentialUserEntity;
  */
 class UserRepository extends ServiceEntityRepository implements PublicKeyCredentialUserEntityRepositoryInterface, CanRegisterUserEntity, CanGenerateUserEntity
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private readonly \Symfony\Bundle\SecurityBundle\Security $security)
     {
         parent::__construct($registry, User::class);
     }
 
     public function saveUserEntity(PublicKeyCredentialUserEntity $userEntity): void
     {
-        $user = new User();
+        $user = $this->findOneBy(['email' => $userEntity->name]) ?? new User();
         $user->setEmail($userEntity->name);
         $user->setUserHandle($userEntity->id);
 
@@ -37,15 +37,34 @@ class UserRepository extends ServiceEntityRepository implements PublicKeyCredent
         $this->getEntityManager()->flush();
     }
 
+    public function createPasswordUser(string $email, string $hashedPassword): User
+    {
+        $user = new User();
+        $user->setEmail($email);
+        $user->setPassword($hashedPassword);
+
+        $this->getEntityManager()->persist($user);
+        $this->getEntityManager()->flush();
+
+        return $user;
+    }
+
     /**
      * @throws InvalidDataException
      */
     public function generateUserEntity(?string $username, ?string $displayName): PublicKeyCredentialUserEntity
     {
+        $user = null;
+        if ($username) {
+            $user = $this->findOneBy(['email' => $username]);
+        } elseif ($this->security->getUser() instanceof User) {
+            $user = $this->security->getUser();
+        }
+
         return new PublicKeyCredentialUserEntity(
-            $username ?? '',
-            Uuid::v4()->toRfc4122(),
-            $displayName ?? $username ?? ''
+            $user?->getEmail() ?? $username ?? '',
+            $user?->getUserHandle() ?? Uuid::v4()->toRfc4122(),
+            $user?->getEmail() ?? $displayName ?? $username ?? ''
         );
     }
 

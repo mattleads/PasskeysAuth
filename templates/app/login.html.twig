@@ -1,16 +1,52 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Log in or Register with Passkey{% endblock %}
+{% block title %}Log in or Register{% endblock %}
 
 {% block body %}
-    <div style="max-width: 400px; margin: 50px auto; font-family: sans-serif;">
-        <h1>Passkeys Demo</h1>
+    <div style="max-width: 400px; margin: 50px auto;">
+        <h1 class="text-center">Passkeys Demo</h1>
         
         {% if app.session.flashbag.peekAll|length > 0 %}
-            <div class="alert alert-danger">
-                Authentication failed or session expired.
-            </div>
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
         {% endif %}
+
+        <h2>Login</h2>
+        <form action="{{ path('app_password_login') }}" method="POST"
+              data-controller="hybrid-login" 
+              data-hybrid-login-options-url-value="/login/passkey/options"
+              data-hybrid-login-result-url-value="/login/passkey/result"
+              data-hybrid-login-flow-url-value="{{ path('app_api_auth_flow') }}"
+              data-action="submit->hybrid-login#submit">
+            
+            <input type="email" name="username" class="form-input" placeholder="Enter your email" required
+                   data-hybrid-login-target="email" autocomplete="username webauthn" />
+
+            <div data-hybrid-login-target="passwordContainer" class="d-none">
+                <input type="password" name="password" class="form-input" placeholder="Enter your password"
+                       data-hybrid-login-target="password" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" data-hybrid-login-target="continueButton">
+                Continue
+            </button>
+            <button type="submit" class="btn btn-success d-none" data-hybrid-login-target="loginButton">
+                Log in with Password
+            </button>
+
+            <div data-hybrid-login-target="passwordFallback" class="text-center d-none mt-3">
+                <a href="#" data-action="click->hybrid-login#showPasswordInput" style="color: #6c757d; font-size: 0.9em;">
+                    Login with Password instead
+                </a>
+            </div>
+        </form>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
 
         <h2>Register</h2>
         <form data-controller="passkey" 
@@ -18,26 +54,14 @@
               data-passkey-result-url-value="/register/passkey/result"
               data-passkey-is-login-value="false"
               data-action="submit->passkey#submit">
-            <div style="margin-bottom: 10px;">
-                <input type="text" name="username" placeholder="Enter an email to register" required style="width: 100%; padding: 8px;" />
-            </div>
-            <button type="submit" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer;">
+            <input type="text" name="username" class="form-input" placeholder="Enter an email to register a passkey" required />
+            <button type="submit" class="btn btn-success">
                 Register with Passkey
             </button>
         </form>
-
-        <hr style="margin: 30px 0;">
-
-        <h2>Login</h2>
-        <form data-controller="passkey" 
-              data-passkey-options-url-value="/login/passkey/options"
-              data-passkey-result-url-value="/login/passkey/result"
-              data-passkey-is-login-value="true"
-              data-action="submit->passkey#submit">
-            <!-- No username needed for conditional mediation/discoverable credentials usually, but we can pass it if we want -->
-            <button type="submit" style="width: 100%; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer;">
-                Log in with Passkey
-            </button>
-        </form>
+        
+        <div class="text-center mt-3">
+            <a href="{{ path('app_register_password') }}" style="color: #007bff; text-decoration: none;">Or Register with a Traditional Password</a>
+        </div>
     </div>
 {% endblock %}

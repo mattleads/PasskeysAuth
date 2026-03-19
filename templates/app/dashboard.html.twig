@@ -5,9 +5,25 @@
 {% block body %}
     <div style="max-width: 600px; margin: 50px auto; font-family: sans-serif; text-align: center;">
         <h1>Welcome, {{ app.user.email }}!</h1>
-        <p>You have successfully logged in using your Passkey.</p>
+        <p>Manage your account security below.</p>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+            <h3>Passkey Security</h3>
+            <p>Passkeys allow you to log in securely without a password using your fingerprint, face, or screen lock.</p>
+            
+            <form data-controller="passkey" 
+                  data-passkey-options-url-value="{{ path('app_dashboard_passkey_options') }}"
+                  data-passkey-result-url-value="{{ path('app_dashboard_passkey_result') }}"
+                  data-passkey-is-login-value="false"
+                  data-action="submit->passkey#submit">
+                {# Username is implicit from session on backend #}
+                <button type="submit" class="btn btn-success" style="width: auto; padding: 10px 20px;">
+                    Add a Passkey to your Account
+                </button>
+            </form>
+        </div>
         
-        <a href="{{ path('app_logout') }}" style="display: inline-block; padding: 10px 20px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px;">
+        <a href="{{ path('app_logout') }}" style="display: inline-block; padding: 10px 20px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
             Logout
         </a>
     </div>

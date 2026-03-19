@@ -1,15 +1,17 @@
-# Symfony 7.4 Passkey Authentication Demo
+# Symfony 7.4 Passkey & Hybrid Authentication Demo
 
-This is a complete, working demonstration of implementing robust, passwordless Passkey (FIDO2/WebAuthn) authentication in a modern **Symfony 7.4** application. It uses the industry-standard `web-auth/webauthn-symfony-bundle` along with modern frontend tooling (Stimulus + AssetMapper) to provide a seamless user experience.
+This is a complete, working demonstration of implementing robust, passwordless Passkey (FIDO2/WebAuthn) and traditional password authentication in a modern **Symfony 7.4** application. It uses the industry-standard `web-auth/webauthn-symfony-bundle` alongside a custom **Hybrid Authenticator** and modern frontend tooling (Stimulus + AssetMapper) to provide a seamless, progressive user experience.
 
 ## ✨ Features
 
-*   **100% Passwordless:** No passwords, hashes, or reset emails required. Entities and Security config are completely stripped of password logic.
+*   **Hybrid Authentication:** A single, intelligent login form. Enter an email, and the app automatically decides whether to trigger a Passkey prompt or reveal a password field.
+*   **WebAuthn Autofill (Conditional Mediation):** Modern "Passkey Autofill" support. When a user focuses the email input, the browser automatically suggests their saved Passkeys for instant login.
+*   **Progressive Passkey Adoption:** Users can register with a traditional password and later "upgrade" their account by adding one or more Passkeys from their dashboard.
 *   **Modern Symfony Stack:** Built on Symfony 7.4 LTS with Doctrine ORM.
-*   **Zero-Node Frontend:** Uses Symfony AssetMapper and Stimulus (`@hotwired/stimulus`) to handle the WebAuthn API natively on the client side.
-*   **Standardized Security:** Integrates natively into the Symfony Security component (Firewalls, Authenticators) for both registration and login flows.
-*   **CSRF Protection:** Secure Stimulus controllers integrate Symfony's CSRF protection into AJAX `fetch` requests.
-*   **Biometric Support:** Works out-of-the-box with Apple Touch ID / Face ID, Windows Hello, Android Biometrics, and hardware security keys (like YubiKey), with full `TrustPath` data integrity.
+*   **Custom Authenticator:** Implements a clean `HybridAuthenticator` using Symfony's Passport system to handle legacy password logins alongside WebAuthn.
+*   **Zero-Node Frontend:** Uses Symfony AssetMapper and Stimulus (`@hotwired/stimulus`) to handle the WebAuthn API natively on the client side without a `node_modules` folder.
+*   **SOLID/DRY Architecture:** Business logic is decoupled into specialized controllers and services, with a shared `webauthn_service.js` for consistent frontend behavior.
+*   **Biometric Support:** Works out-of-the-box with Apple Touch ID / Face ID, Windows Hello, Android Biometrics, and hardware security keys (like YubiKey).
 
 ## 🚀 Requirements
 
@@ -26,7 +28,7 @@ This is a complete, working demonstration of implementing robust, passwordless P
    cd PasskeysAuth
    ```
    
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    composer install
    ```
@@ -42,50 +44,50 @@ This is a complete, working demonstration of implementing robust, passwordless P
 4. **Database Setup:**
    The project is pre-configured to use SQLite for easy setup.
    ```bash
-   # Create the SQLite database and schema
+   # Create the SQLite database and run migrations
    php bin/console doctrine:database:create
-   php bin/console doctrine:schema:create
+   php bin/console doctrine:migrations:migrate
    ```
 
 5. **Start the local server:**
-   You can use Symfony CLI or the built-in PHP server.
    ```bash
    # Using PHP built-in server
    php -S localhost:8000 -t public
-   
-   # Or using Symfony CLI
-   symfony server:start
    ```
 
 6. **Access the application:**
    Open your browser and navigate to `http://localhost:8000`.
 
-## 💻 Usage Guide
+## 💻 Usage Examples
 
-### 1. Registration
-1. On the home page, enter an email address under the **Register** section.
-2. Click "Register with Passkey".
-3. Your browser or operating system will prompt you to create a Passkey (e.g., scan your fingerprint or use Face ID).
-4. Upon success, the server securely stores the public key, and you are logged in and redirected to the dashboard.
+### 1. Hybrid Login & Autofill
+1. **Scenario A (Autofill):** Click into the email input. If you have a registered Passkey, your browser will offer it as an autofill suggestion. Selecting it logs you in instantly.
+2. **Scenario B (Manual):** Enter your email and click **Continue**.
+   - If you have a Passkey, your browser will prompt for biometric authentication.
+   - If you don't have a Passkey, a password field will appear.
+3. **Fallback:** You can always click "Login with Password instead" to use your legacy credentials if biometrics are unavailable.
 
-### 2. Login
-1. Once registered, log out (or open an incognito window).
-2. On the home page, click "Log in with Passkey" under the **Login** section.
-3. Your browser will prompt you to authenticate using the Passkey you created.
-4. Upon success, you are securely logged into the dashboard.
+### 2. Traditional Password Registration
+1. Click the link **"Or Register with a Traditional Password"** below the login form.
+2. Enter your email and choose a password.
+3. After registering, you will be redirected to the login page.
+
+### 3. Adding a Passkey to a Password Account
+1. Log in to your account using your email and password.
+2. On the **Dashboard**, locate the **"Passkey Security"** section.
+3. Click **"Add a Passkey to your Account"**.
+4. Follow the browser prompt to register your biometric (fingerprint/face).
+5. Next time you log in, the browser will offer the Passkey via both autofill and the manual flow.
 
 ## 🏗️ Architecture Overview
 
-If you want to understand how this works or adapt it for your own application, here are the key components:
+*   **`App\Security\HybridAuthenticator`:** A custom authenticator that intercepts password-based login attempts, validating them via the Symfony Passport system.
+*   **`App\Controller\AuthController`:** Contains the `/api/auth/flow` endpoint, which performs real-time detection of a user's preferred authentication method.
+*   **`App\Controller\PasskeySettingsController`:** A specialized controller for authenticated users to manage their Passkeys, bypassing standard registration limits for existing accounts.
+*   **`assets/controllers/webauthn_service.js`:** A shared JavaScript module that encapsulates the WebAuthn challenge/response cycle (fetch options -> browser API -> verify result).
+*   **`App\Entity\User`:** Supports both `userHandle` (for WebAuthn) and a hashed `password`.
+*   **`App\Repository\UserRepository` & `PublicKeyCredentialSourceRepository`:** Centralizes persistence logic and ensures correct Base64URL encoding for binary credential data.
 
-*   **`config/packages/webauthn.yaml`:** The core configuration file for the WebAuthn bundle. It defines the Relying Party (your app) using environment variables.
-*   **`config/packages/security.yaml`:** Configures the `webauthn` firewall to handle both the registration and authentication result directly via the Symfony Security component, securely persisting the user and logging them in.
-*   **Entities:**
-    *   `App\Entity\User`: Represents the human user. Unlike traditional apps, it contains a `userHandle` (a unique UUID required by WebAuthn) and **no password**.
-    *   `App\Entity\PublicKeyCredentialSource`: Stores the metadata, trust path, and public key of the device the user registered with.
-*   **Repositories:**
-    *   `UserRepository`: Bridges Doctrine and the WebAuthn bundle by implementing `PublicKeyCredentialUserEntityRepositoryInterface`, `CanRegisterUserEntity`, and `CanGenerateUserEntity`.
-    *   `PublicKeyCredentialSourceRepository`: Bridges the credential storage by implementing `PublicKeyCredentialSourceRepositoryInterface` and `CanSaveCredentialSource`.
-*   **Frontend (`assets/controllers/passkey_controller.js`):** A Stimulus controller that bridges the HTML forms to the `@simplewebauthn/browser` package. It handles the two-step handshake: asking the server for "options" (a challenge), triggering the browser's native biometric prompt, and sending the "result" back to the server for verification, all while passing secure CSRF headers.
+## 🛡️ Security
 
-
+The project implements full CSRF protection on all authentication-related AJAX requests via `csrf_protection_controller.js`, ensuring that even passwordless flows are protected against cross-site attacks.
