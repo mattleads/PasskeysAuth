@@ -2,13 +2,13 @@
 
 {% block body %}
     <h1>Manage Your Passkeys</h1>
-    
+
     <div style="margin-bottom: 20px;">
         <a href="{{ path('app_dashboard') }}" class="btn btn-secondary" style="display: inline-block; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
             &larr; Back to Dashboard
         </a>
     </div>
-    
+
     {% for message in app.flashes('success') %}
         <div class="alert alert-success">
             {{ message }}
@@ -27,7 +27,7 @@
             </div>
         </div>
     {% endif %}
-    
+
     <table class="table">
         <thead>
             <tr>
@@ -42,7 +42,7 @@
             <tr>
                 <td>
                     <span title="{{ credential.aaguid }}">
-                        {{ credential.aaguid == '00000000-0000-0000-0000-000000000000' ? 'Software/Synced Passkey' : 'Hardware Key' }}
+                        {{ credential.aaguid == '00000000-0000-0000-0000-000000000000' ? 'Unknown Passkey' : 'Hardware Key' }}
                     </span>
                 </td>
                 <td>{{ credential.createdAt ? credential.createdAt|date('Y-m-d H:i') : 'Unknown' }}</td>
