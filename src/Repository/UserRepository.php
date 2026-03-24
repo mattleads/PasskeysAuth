@@ -61,10 +61,14 @@ class UserRepository extends ServiceEntityRepository implements PublicKeyCredent
             $user = $this->security->getUser();
         }
 
+        if ($user) {
+            return $user->toWebAuthnUser();
+        }
+
         return new PublicKeyCredentialUserEntity(
-            $user?->getEmail() ?? $username ?? '',
-            $user?->getUserHandle() ?? Uuid::v4()->toRfc4122(),
-            $user?->getEmail() ?? $displayName ?? $username ?? ''
+            $username ?? '',
+            Uuid::v4()->toRfc4122(),
+            $displayName ?? $username ?? ''
         );
     }
 
@@ -78,11 +82,7 @@ class UserRepository extends ServiceEntityRepository implements PublicKeyCredent
             return null;
         }
 
-        return new PublicKeyCredentialUserEntity(
-            $user->getEmail(),
-            $user->getUserHandle(),
-            $user->getEmail()
-        );
+        return $user->toWebAuthnUser();
     }
 
     /**
@@ -95,10 +95,6 @@ class UserRepository extends ServiceEntityRepository implements PublicKeyCredent
             return null;
         }
 
-        return new PublicKeyCredentialUserEntity(
-            $user->getEmail(),
-            $user->getUserHandle(),
-            $user->getEmail()
-        );
+        return $user->toWebAuthnUser();
     }
 }

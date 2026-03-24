@@ -6,12 +6,14 @@ This is a complete, working demonstration of implementing robust, passwordless P
 
 *   **Hybrid Authentication:** A single, intelligent login form. Enter an email, and the app automatically decides whether to trigger a Passkey prompt or reveal a password field.
 *   **WebAuthn Autofill (Conditional Mediation):** Modern "Passkey Autofill" support. When a user focuses the email input, the browser automatically suggests their saved Passkeys for instant login.
+*   **Passkey Management Dashboard:** Users can view all their registered passkeys, see device types (AAGUID), and track exactly when each was last used.
+*   **Instant Revocation:** If a device is lost or stolen, users can instantly revoke a specific passkey from their settings, neutralizing the threat.
+*   **Offline Recovery Codes:** A robust fallback for 100% passwordless accounts. Generate single-use, hashed recovery codes to regain access if all biometric devices are lost.
+*   **Passkey Usage Tracking:** Automatically records the `lastUsedAt` timestamp for every successful authentication event using Symfony's EventDispatcher.
 *   **Progressive Passkey Adoption:** Users can register with a traditional password and later "upgrade" their account by adding one or more Passkeys from their dashboard.
 *   **Modern Symfony Stack:** Built on Symfony 7.4 LTS with Doctrine ORM.
 *   **Custom Authenticator:** Implements a clean `HybridAuthenticator` using Symfony's Passport system to handle legacy password logins alongside WebAuthn.
 *   **Zero-Node Frontend:** Uses Symfony AssetMapper and Stimulus (`@hotwired/stimulus`) to handle the WebAuthn API natively on the client side without a `node_modules` folder.
-*   **SOLID/DRY Architecture:** Business logic is decoupled into specialized controllers and services, with a shared `webauthn_service.js` for consistent frontend behavior.
-*   **Biometric Support:** Works out-of-the-box with Apple Touch ID / Face ID, Windows Hello, Android Biometrics, and hardware security keys (like YubiKey).
 
 ## 🚀 Requirements
 
@@ -72,20 +74,23 @@ This is a complete, working demonstration of implementing robust, passwordless P
 2. Enter your email and choose a password.
 3. After registering, you will be redirected to the login page.
 
-### 3. Adding a Passkey to a Password Account
-1. Log in to your account using your email and password.
-2. On the **Dashboard**, locate the **"Passkey Security"** section.
-3. Click **"Add a Passkey to your Account"**.
-4. Follow the browser prompt to register your biometric (fingerprint/face).
-5. Next time you log in, the browser will offer the Passkey via both autofill and the manual flow.
+### 3. Managing Passkeys & Recovery
+1. Navigate to **"Manage Passkeys"** in your settings.
+2. View your list of registered devices. Hardware keys (like YubiKey) and software passkeys are automatically distinguished via AAGUID detection.
+3. Track the **"Last Used"** column to identify any unauthorized access.
+4. **Offline Recovery:** If you haven't saved your recovery codes yet, they will be displayed once. Copy these and store them in a secure, offline location.
+5. **Emergency Login:** If you lose your biometric device, navigate to `/recovery-login`. Enter your email and one of your 8-character recovery codes to bypass WebAuthn and regain access.
 
 ## 🏗️ Architecture Overview
 
 *   **`App\Security\HybridAuthenticator`:** A custom authenticator that intercepts password-based login attempts, validating them via the Symfony Passport system.
-*   **`App\Controller\AuthController`:** Contains the `/api/auth/flow` endpoint, which performs real-time detection of a user's preferred authentication method.
-*   **`App\Controller\PasskeySettingsController`:** A specialized controller for authenticated users to manage their Passkeys, bypassing standard registration limits for existing accounts.
+*   **`App\Controller\PasskeyManagementController`:** The hub for user settings. Handles passkey listing, revocation logic, and automated recovery code generation.
+*   **`App\Controller\RecoveryLoginController`:** A dedicated fallback authentication path that uses single-use hashed recovery codes for account recovery.
+*   **`App\Service\RecoveryCodeGenerator`:** A secure service that produces cryptographically strong recovery codes and stores them using Symfony's `UserPasswordHasherInterface`.
+*   **`App\EventSubscriber\PasskeyUsageSubscriber`:** Listens for `AuthenticatorAssertionResponseValidationSucceededEvent` to update the `lastUsedAt` timestamp on credentials in real-time.
 *   **`assets/controllers/webauthn_service.js`:** A shared JavaScript module that encapsulates the WebAuthn challenge/response cycle (fetch options -> browser API -> verify result).
-*   **`App\Entity\User`:** Supports both `userHandle` (for WebAuthn) and a hashed `password`.
+*   **`App\Entity\User`:** Supports both `userHandle` (for WebAuthn), a legacy `password`, and a collection of `RecoveryCode` entities.
+*   **`App\Entity\PublicKeyCredentialSource`:** An extension of the WebAuthn bundle's base entity, adding custom fields for usage tracking.
 *   **`App\Repository\UserRepository` & `PublicKeyCredentialSourceRepository`:** Centralizes persistence logic and ensures correct Base64URL encoding for binary credential data.
 
 ## 🛡️ Security

@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recovery Login{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="mb-4">Recovery Login</h1>
+
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="inputEmail" class="form-label">Email</label>
+                        <input type="email" value="" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="inputCode" class="form-label">Recovery Code</label>
+                        <input type="text" name="code" id="inputCode" class="form-control" required>
+                    </div>
+
+                    <button class="btn btn-primary" type="submit">
+                        Login with Recovery Code
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -4,10 +4,14 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
+
+use Webauthn\PublicKeyCredentialUserEntity;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
@@ -29,9 +33,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $password = null;
 
+    /**
+     * @var Collection<int, RecoveryCode>
+     */
+    #[ORM\OneToMany(targetEntity: RecoveryCode::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $recoveryCodes;
+
     public function __construct()
     {
         $this->userHandle = Uuid::v4()->toRfc4122();
+        $this->recoveryCodes = new ArrayCollection();
     }
 
     public function getUserHandle(): ?string
@@ -57,6 +68,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getEmail(): ?string
     {
         return $this->email;
+    }
+
+    public function toWebAuthnUser(): PublicKeyCredentialUserEntity
+    {
+        return new PublicKeyCredentialUserEntity(
+            $this->email,
+            $this->userHandle,
+            $this->email
+        );
     }
 
     public function setEmail(string $email): static
@@ -114,5 +134,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    /**
+     * @return Collection<int, RecoveryCode>
+     */
+    public function getRecoveryCodes(): Collection
+    {
+        return $this->recoveryCodes;
+    }
+
+    public function addRecoveryCode(RecoveryCode $recoveryCode): static
+    {
+        if (!$this->recoveryCodes->contains($recoveryCode)) {
+            $this->recoveryCodes->add($recoveryCode);
+            $recoveryCode->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRecoveryCode(RecoveryCode $recoveryCode): static
+    {
+        if ($this->recoveryCodes->removeElement($recoveryCode)) {
+            // set the owning side to null (unless already changed)
+            if ($recoveryCode->getUser() === $this) {
+                $recoveryCode->setUser(null);
+            }
+        }
+
+        return $this;
     }
 }

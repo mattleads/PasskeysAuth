@@ -17,7 +17,6 @@ use Webauthn\Bundle\Security\Storage\OptionsStorage;
 use Webauthn\Bundle\Security\Storage\Item;
 use Webauthn\PublicKeyCredential;
 use Webauthn\PublicKeyCredentialDescriptor;
-use Webauthn\PublicKeyCredentialUserEntity;
 
 #[Route('/dashboard/passkey')]
 class PasskeySettingsController extends AbstractController
@@ -41,11 +40,7 @@ class PasskeySettingsController extends AbstractController
                 return new JsonResponse(['errorMessage' => 'User not logged in'], Response::HTTP_UNAUTHORIZED);
             }
 
-            $userEntity = new PublicKeyCredentialUserEntity(
-                $user->getEmail(),
-                $user->getUserHandle(),
-                $user->getEmail()
-            );
+            $userEntity = $user->toWebAuthnUser();
 
             // Get already registered credentials to exclude them
             $excludeCredentials = $this->credentialSourceRepository->findAllForUserEntity($userEntity);
@@ -88,7 +83,7 @@ class PasskeySettingsController extends AbstractController
             $data = $request->getContent();
             /** @var PublicKeyCredential $publicKeyCredential */
             $publicKeyCredential = $this->serializer->deserialize($data, PublicKeyCredential::class, 'json');
-            
+
             $response = $publicKeyCredential->response;
             if (!$response instanceof AuthenticatorAttestationResponse) {
                 throw new \RuntimeException('Invalid response type');
@@ -97,7 +92,7 @@ class PasskeySettingsController extends AbstractController
             $challenge = $response->clientDataJSON->challenge;
             $item = $this->optionsStorage->get($challenge);
             $options = $item->getPublicKeyCredentialOptions();
-            
+
             $credentialSource = $this->attestationValidator->check(
                 $response,
                 $options,
