@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Manage Your Passkeys</h1>
+    
+    <div style="margin-bottom: 20px;">
+        <a href="{{ path('app_dashboard') }}" class="btn btn-secondary" style="display: inline-block; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+    
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% if newCodes %}
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">Save these Recovery Codes!</h4>
+            <p>You can use these codes to log in if you lose your device. They will only be shown <b>once</b>.</p>
+            <hr>
+            <div class="row">
+                {% for code in newCodes %}
+                    <div class="col-6 col-md-4 mb-2"><code>{{ code }}</code></div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>AAGUID (Device Type)</th>
+                <th>Added On</th>
+                <th>Last Used</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for credential in credentials %}
+            <tr>
+                <td>
+                    <span title="{{ credential.aaguid }}">
+                        {{ credential.aaguid == '00000000-0000-0000-0000-000000000000' ? 'Software/Synced Passkey' : 'Hardware Key' }}
+                    </span>
+                </td>
+                <td>{{ credential.createdAt ? credential.createdAt|date('Y-m-d H:i') : 'Unknown' }}</td>
+                <td>{{ credential.lastUsedAt ? credential.lastUsedAt|date('Y-m-d H:i') : 'Never' }}</td>
+                <td>
+                    <form action="{{ path('app_settings_passkeys_revoke', { 'id': credential.id }) }}" method="POST">
+                        <button type="submit" class="btn btn-danger">Revoke</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4">No passkeys registered.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
